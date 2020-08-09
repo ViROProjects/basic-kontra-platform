@@ -18,8 +18,7 @@ class TextScene {
         context.fillText("A game for you", 30, 45);
         context.fillText("By ViRO", 20, 60);
         context.fillText("<Press ENTER>", 40, 80);
-
-        context.fillText("Collect yellow, avoid Red, finish on Purple bar", 10, 100);
+        context.fillText("Collect yellow, avoid Red", 10, 100);
         context.fillText("finish on Purple bar", 10, 125);
     }
 }
@@ -44,9 +43,9 @@ class Scene {
     }
     update() {
         this.sprite.update();
-        if (this.sprite.x > canvas.width) {
-            this.sprite.x = -this.sprite.width;
-        }
+        // if (this.sprite.x > canvas.width) {
+        //     this.sprite.x = -this.sprite.width;
+        // }
         if(this.sprite.finish){
             //this.victor[0].color ="BlueViolet";
             this.finish=true;
@@ -69,14 +68,19 @@ class Scene {
         for (let i of victor) {
             i.render();
         }
-        context.fillText(`lives: ${this.sprite.life}  score: ${this.sprite.score}`, 0, 0);
+        context.fillText(`lives: ${this.sprite.life}  score: ${this.sprite.score}`,- context.getTransform().e + 0, 0);
 
         if (this.sprite.finish) {
-            context.fillText(this.sprite.victory ? "victory <press enter>" : "defeated <press enter>", 50, 30);
+            context.fillText(this.sprite.victory ? "victory <press enter>" : "defeated <press enter>",  -context.getTransform().e +50, 30);
         }
         else {
             this.sprite.render();
         }
+        let midSpr = this.sprite.x + (this.sprite.width / 2);
+        let midScr = document.getElementById("gamearea").clientWidth / 2 ;
+
+        let camX = midSpr < midScr ? 0: midSpr > canvas.width - midScr  ? ((canvas.width *-1) + (midScr*2)) : (midSpr - midScr)*-1;
+        context.setTransform(1,0,0,1 ,camX,0);
     }
 }
 
@@ -98,6 +102,16 @@ class Player extends Sprite.class {
             if (victor.filter(x => this.collidesWith(x)).length && this.mission) {
                 this.finish = true;
                 this.victory = true;
+            }
+
+            if(this.y > 200){
+                if (this.life > 0) {
+                    this.position = this.initial;
+                    this.life -= 1;
+                }
+                else {
+                    this.finish = true;
+                }
             }
 
             if (bads.filter(x => this.collidesWith(x)).length) {
@@ -129,13 +143,59 @@ class Player extends Sprite.class {
                 this.dy = -12;
                 this.onGround = false;
             }
-            else if (arrs.filter(x => this.collidesWith(x)).length) {
-                this.dy = 0;
-                this.y = arrs.filter(x => this.collidesWith(x))[0].y - this.height;
-                this.onGround = true;
+            else{
+                // this.platformDetection();
             }
+
+            this.platformDetection();
+            this.borderDetection();
             this.advance();
         }
+    }
+    platformDetection(){
+        for(let item of arrs.filter(x => this.collidesWith(x))){
+            let downD = this.y > item.y;
+            let upD = this.y + this.height <= item.y + item.height;
+            let leftD = (item.x === this.x + this.width || item.x > this.x + this.width - 10);
+            let rightD = (item.x + item.width === this.x || item.x + item.width - 10 < this.x);
+
+            if(leftD && (downD || upD) && this.dx !== 0){
+                this.x = item.x - this.width;                
+                this.dx = 0;
+                break;
+            }
+            if(rightD && (downD || upD) && this.dx !== 0){
+                this.x = item.x + item.width;
+                this.dx = 0;
+                break;
+            }
+            if(downD){
+                this.y = item.y + item.height;
+                this.dy = 0;
+                break;
+            }
+            else{
+                this.y = item.y - this.height;
+                this.dy = 0;
+                this.onGround = true;
+                break;
+            }
+        }
+    }
+
+    borderDetection(){
+        let leftB = this.x + this.width > canvas.width;
+        let rightB = this.x < 0;
+
+        if(rightB){
+            this.x = 0;
+            this.dx = 0;
+        }
+        else if(leftB){
+            this.x = canvas.width - this.width;
+            this.dx = 0;
+        }
+
     }
 }
 
@@ -158,6 +218,22 @@ class MyClass {
                 width: 300,
                 height: 20,
                 anchor: { x: 0, y: 0 }
+            },
+            {
+                x: 340,
+                y: 80,
+                color: 'green',
+                width: 100,
+                height: 20,
+                anchor: { x: 0, y: 0 }
+            },
+            {
+                x: 500,
+                y: 100,
+                color: 'green',
+                width: 150,
+                height: 20,
+                anchor: { x: 0, y: 0 }
             }
             ],
             bads: [{
@@ -169,21 +245,21 @@ class MyClass {
                 anchor: { x: 0, y: 0 }
             }],
             yess: [{
-                x: 70,
+                x: 165,
                 y: 50,
                 color: 'yellow',
                 width: 10,
                 height: 10,
                 anchor: { x: 0, y: 0 }
             }, {
-                x: 150,
-                y: 50,
+                x: 370,
+                y: 30,
                 color: 'yellow',
                 width: 10,
                 height: 10,
                 anchor: { x: 0, y: 0 }
             }, {
-                x: 210,
+                x: 550,
                 y: 50,
                 color: 'yellow',
                 width: 10,
@@ -192,7 +268,7 @@ class MyClass {
             }
             ],
             victor: [{
-                x: 280,
+                x: 590,
                 y: 0,
                 color: 'black',
                 width: 10,
